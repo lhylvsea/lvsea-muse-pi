@@ -1,0 +1,18 @@
+{
+  "defaultProvider": "ling",
+  "defaultModel": "Ling-3.1-flash",
+  "defaultThinkingLevel": "high",
+  "enabledModels": [
+    "ling/Ling-3.1-flash"
+  ],
+  "packages": [
+    "npm:pi-mcp-adapter",
+    "npm:pi-web-access",
+    "npm:@tintinweb/pi-subagents",
+    "npm:@ff-labs/pi-fff",
+    "npm:pi-context-prune"
+  ],
+  "extensions": [
+    "-builtin:mcp"
+  ]
+}

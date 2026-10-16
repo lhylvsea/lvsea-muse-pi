@@ -1,0 +1,31 @@
+{
+  "providers": {
+    "ling": {
+      "baseUrl": "https://api.ant-ling.com/v1",
+      "api": "openai-completions",
+      "apiKey": "!bash -ic 'echo $LING_API_KEY'",
+      "authHeader": true,
+      "compat": {
+        "supportsDeveloperRole": false
+      },
+      "models": [
+        {
+          "id": "Ling-3.1-flash",
+          "name": "Ant Ling 3.1 Flash",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "xhigh"
+          },
+          "input": ["text"],
+          "contextWindow": 256000,
+          "maxTokens": 32000,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        }
+      ]
+    }
+  }
+}
