@@ -8,7 +8,8 @@ pi 编程助手（`@earendil-works/pi-coding-agent`）在本机的完整工作�
 - 默认模型：`Ling-3.1-flash`（thinking level `high`，256K 上下文 / 32K max output，成本全 0）
 - 5 个扩展：`pi-mcp-adapter` / `pi-web-access` / `@tintinweb/pi-subagents` / `@ff-labs/pi-fff` / `pi-context-prune`
 - 免费模型池：freetoken-bots 雷达（scan → ≥100B 独立验证 → probe tool 调用 → sync 只做 proposal）
-- 定时任务：每天 08:00 免费模型扫描 + 09:46 OpenRouter 名单巡检
+- 备用免费池：Magpie 本地网关（`docs/magpie-gateway.md`）：插件 `lesnolie/magpie-free-gateways`，zen-free-all（public）+ kilo-free-all（anonymous），31 个免费模型，pi 里 provider `magpie`，主力 ling 不动
+- 定时任务：每天 08:00 免费模型扫描 + 09:46 OpenRouter 名单巡检 + 约 08:46 Magpie 插件更新巡检
 
 ## 安装步骤
 
@@ -46,13 +47,18 @@ lvsea-muse-pi/
 ├── SKILL.md                        # 机器可读 skill 正文（安装/配置/用法/免费模型池/定时任务）
 ├── README.md                       # 本文件：人类总览
 ├── scripts/install.sh              # 一键安装脚本（不含密钥，只提示 export）
+├── scripts/install-magpie.sh       # Magpie 网关一键安装：magpie-cli + 插件 + 匿名登录 + pi 备用 provider
+├── scripts/pi-magpie.sh            # 包装脚本：网关没跑自动拉起，跑 pi 走 magpie 备用池
+├── scripts/magpie-plugin-watch.sh  # 每日巡检执行脚本：GitHub commit 比对，有更新则同步重装验证
 ├── config/
 │   ├── settings.json.example       # settings.json 脱敏模板
 │   └── models.json.example         # models.json 脱敏模板（apiKey 为运行时读取命令，非密钥）
 ├── crons/
 │   ├── freetoken-bots-daily-scan.md  # 每日 08:00 扫描任务模板
-│   └── openrouter-free-watch.md      # 每日 09:46 名单巡检任务模板
+│   ├── openrouter-free-watch.md      # 每日 09:46 名单巡检任务模板
+│   └── magpie-plugin-watch.md        # 每日约 08:46 插件更新巡检模板
 └── docs/
     ├── free-models.md              # 免费模型池完整流程与红线
-    └── scheduling.md               # 定时任务设计：为什么必须每天 8 点、分工、接入方式
+    ├── scheduling.md               # 定时任务设计：为什么必须每天 8 点、分工、接入方式
+    └── magpie-gateway.md           # Magpie 免费网关：安装/登录/网关/pi 备用配置/切换/巡检/坑
 ```

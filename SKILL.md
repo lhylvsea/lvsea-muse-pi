@@ -1,6 +1,6 @@
 ---
 name: pi-agent-workflow
-description: 在新机器上复刻 pi 编程助手工作流（安装、ling 免费 provider 配置、OpenRouter 免费模型池、每日定时巡检）的操作手册。
+description: 在新机器上复刻 pi 编程助手工作流（安装、ling 免费 provider 配置、OpenRouter 免费模型池、Magpie 免费网关备用池、每日定时巡检）的操作手册。
 ---
 
 # pi-agent-workflow
@@ -89,3 +89,14 @@ npm install -g @earendil-works/pi-coding-agent
 两条共同纪律：无变化保持沉默；不改 pi 任何配置文件（sync 只允许 `--dry-run`）。
 
 接入二选一：Muse 的 cron 工具（直接吃 `crons/*.md` 的 frontmatter 格式），或系统 cron / launchd / systemd timer（裸机平台）。
+
+## 6. 备用免费池（Magpie 网关）
+
+主力 `ling` 之外的第二条腿：Magpie 本地网关 + `lesnolie/magpie-free-gateways` 插件。完整手册见 `docs/magpie-gateway.md`，这里只记要点：
+
+- **安装**：`bash scripts/install-magpie.sh`（装 magpie-cli 到 `~/.npm-global/bin` → `magpie plugin add github:lesnolie/magpie-free-gateways` → zen 填 `public`、kilo 选匿名填 `anonymous` 登录 → 生成 `~/.config/magpie/web-key` → 给 `models.json` 加 `magpie` provider）。VM 重置丢 npm 全局包，重跑脚本即可；`~/.config/magpie` 在 home 分区保留。
+- **网关**：`MAGPIE_WEB_KEY="$(cat ~/.config/magpie/web-key)" magpie web --gateway --no-open --addr 127.0.0.1:18700`；API 固定 `127.0.0.1:3425/v1`（OpenAI 兼容），模型 ID 形如 `zen-free-all/longcat-2.5-preview-free`。
+- **pi 配置**：`models.json` 新增 provider `magpie`（`baseUrl: http://127.0.0.1:3425/v1`，`apiKey: "!bash -ic 'cat ~/.config/magpie/web-key'"`），8 个模型；`settings.json` 的 `enabledModels` 追加 `magpie/…` 引用；`defaultProvider` 永远 `ling`。
+- **切换**：`bash scripts/pi-magpie.sh -p "任务" </dev/null`（网关没跑自动拉起，默认 `kilo-auto/free`）；或 `pi --provider magpie --model "magpie/…" -p "…" </dev/null`；`pi --list-models magpie` 查看。
+- **巡检**：`crons/magpie-plugin-watch.md`（每天约 08:46）：`scripts/magpie-plugin-watch.sh` 比对 GitHub 最新 commit，有更新则 `magpie plugin update` + 重启网关 + 验证，无变化静默。
+- **红线**：`pi -p` 非交互必须带 `</dev/null`；请求走公开网关，别传敏感代码和 key；绝不改动 ling 主力配置。
