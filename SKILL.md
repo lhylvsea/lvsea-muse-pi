@@ -1,6 +1,6 @@
 ---
 name: pi-agent-workflow
-description: 在新机器上复刻 pi 编程助手工作流（安装、ling 免费 provider 配置、OpenRouter 免费模型池、Magpie 免费网关备用池、每日定时巡检）的操作手册。
+description: 在新机器上复刻 pi 编程助手工作流（安装、ling 主力配置、OpenRouter 免费模型池、Magpie 免费网关备用池、AnyRouter 第三免费 fallback、每日定时巡检）的操作手册。
 ---
 
 # pi-agent-workflow
@@ -100,3 +100,13 @@ npm install -g @earendil-works/pi-coding-agent
 - **切换**：`bash scripts/pi-magpie.sh -p "任务" </dev/null`（网关没跑自动拉起，默认 `kilo-auto/free`）；或 `pi --provider magpie --model "magpie/…" -p "…" </dev/null`；`pi --list-models magpie` 查看。
 - **巡检**：`crons/magpie-plugin-watch.md`（每天约 08:46）：`scripts/magpie-plugin-watch.sh` 比对 GitHub 最新 commit，有更新则 `magpie plugin update` + 重启网关 + 验证，无变化静默。
 - **红线**：`pi -p` 非交互必须带 `</dev/null`；请求走公开网关，别传敏感代码和 key；绝不改动 ling 主力配置。
+
+## 7. 第三免费 fallback（AnyRouter）与统一推理入口
+
+magpie 之后的第三棒：AnyRouter 免费档。完整手册见 `docs/anyrouter.md`，这里只记要点：
+
+- **是什么**：anyrouter.dev 的 OpenAI 兼容网关；免费套餐的 `anyrouter/free` 真 $0、无日限、注册不要绑卡。签到送的 `$25` 是付费额度、Fable 5.1 这类一次 `$9.88`，都不进链路。
+- **本地代理**：`scripts/anyrouter-proxy.py` 监听 `127.0.0.1:3426`，把 `/v1/*` 转发到 `https://anyrouter.dev/api/v1/*`；key 存在 Secure Vault，每请求现场取 surrogate，**不落地**。
+- **pi 配置**：`models.json` 新增 provider `anyrouter`（`baseUrl: http://127.0.0.1:3426/v1`，模型 `anyrouter/free`）；`defaultProvider` 永远 `ling`。
+- **统一入口**：`scripts/pi-reason.sh "<prompt>" [tag]`——cron 推理只调它。链路 kilo → zen → anyrouter；网关/代理不通自动拉起；三棒全挂则打印 `PI_UNAVAILABLE` exit 3，调用方降级本地执行并记 `~/workspace/logs/pi-fallback.log`。
+- **红线**：免费档是共享池，别传敏感代码和 key；自动签到刷额度不搞。
