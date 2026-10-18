@@ -9,7 +9,8 @@ pi 编程助手（`@earendil-works/pi-coding-agent`）在本机的完整工作�
 - 5 个扩展：`pi-mcp-adapter` / `pi-web-access` / `@tintinweb/pi-subagents` / `@ff-labs/pi-fff` / `pi-context-prune`
 - 免费模型池：freetoken-bots 雷达（scan → ≥100B 独立验证 → probe tool 调用 → sync 只做 proposal）
 - 备用免费池：Magpie 本地网关（`docs/magpie-gateway.md`）：插件 `lesnolie/magpie-free-gateways`，zen-free-all（public）+ kilo-free-all（anonymous），31 个免费模型，pi 里 provider `magpie`，主力 ling 不动
-- 第三免费 fallback：AnyRouter 免费档（`docs/anyrouter.md`）：`anyrouter/free` 真 $0 无日限，本地代理 `127.0.0.1:3426`（key 经 Secure Vault 不落地），pi 里 provider `anyrouter`；回退链 kilo → zen → anyrouter 由 `scripts/pi-reason.sh` 统一调度
+- 第三免费 fallback：AnyRouter 免费档（`docs/anyrouter.md`）：`anyrouter/free` 真 $0 无日限，本地代理 `127.0.0.1:3426`（key 经 Secure Vault 不落地），pi 里 provider `anyrouter`
+- 第四免费 fallback：Radox AI 免费档（`docs/radox.md`）：每月 10M tokens，本地代理 `127.0.0.1:3427`（key 经 Secure Vault 不落地，转发带浏览器头过 Cloudflare），pi 里 provider `radox`；回退链 kilo → zen → anyrouter → radox 由 `scripts/pi-reason.sh` 统一调度
 - 定时任务：每天 08:00 免费模型扫描 + 09:46 OpenRouter 名单巡检 + 约 08:46 Magpie 插件更新巡检
 
 ## 安装步骤
@@ -50,8 +51,9 @@ lvsea-muse-pi/
 ├── scripts/install.sh              # 一键安装脚本（不含密钥，只提示 export）
 ├── scripts/install-magpie.sh       # Magpie 网关一键安装：magpie-cli + 插件 + 匿名登录 + pi 备用 provider
 ├── scripts/pi-magpie.sh            # 包装脚本：网关没跑自动拉起，跑 pi 走 magpie 备用池
-├── scripts/pi-reason.sh            # cron 推理统一入口：回退链 kilo → zen → anyrouter，失败 exit 3 降级
+├── scripts/pi-reason.sh            # cron 推理统一入口：回退链 kilo → zen → anyrouter → radox，失败 exit 3 降级
 ├── scripts/anyrouter-proxy.py      # AnyRouter 本地代理：127.0.0.1:3426，key 经 Vault surrogate 不落地
+├── scripts/radox-proxy.py          # Radox 本地代理：127.0.0.1:3427，key 经 Vault surrogate 不落地，带浏览器头过 Cloudflare
 ├── scripts/magpie-plugin-watch.sh  # 每日巡检执行脚本：GitHub commit 比对，有更新则同步重装验证
 ├── config/
 │   ├── settings.json.example       # settings.json 脱敏模板
@@ -64,5 +66,6 @@ lvsea-muse-pi/
     ├── free-models.md              # 免费模型池完整流程与红线
     ├── scheduling.md               # 定时任务设计：为什么必须每天 8 点、分工、接入方式
     ├── magpie-gateway.md           # Magpie 免费网关：安装/登录/网关/pi 备用配置/切换/巡检/坑
-    └── anyrouter.md                # AnyRouter 免费档：注册/本地代理/pi provider/回退链/红线
+    ├── anyrouter.md                # AnyRouter 免费档：注册/本地代理/pi provider/回退链/红线
+    └── radox.md                    # Radox AI 免费档：注册/本地代理/pi provider/回退链/Cloudflare 坑/红线
 ```

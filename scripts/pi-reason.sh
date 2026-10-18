@@ -8,7 +8,9 @@
 #   2. 失败/空回退 zen：pi --provider magpie --model zen-free-all/longcat-2.5-preview-free ...
 #   3. 再失败回退 AnyRouter 免费档：pi --provider anyrouter --model anyrouter/free ...
 #      （走本地代理 127.0.0.1:3426，真 $0 免费 tier，不烧签到送的 $25 额度）
-#   4. 都失败 → stdout 打印 "PI_UNAVAILABLE: <原因>"，exit 3；
+#   4. 再失败回退 Radox 免费档：pi --provider radox --model claude-opus-5.5 ...
+#      （走本地代理 127.0.0.1:3427，免费 10M/月；模型名为中转站标注，质量未验证）
+#   5. 都失败 → stdout 打印 "PI_UNAVAILABLE: <原因>"，exit 3；
 #      调用方（cron worker）改为自己推理，并在本次运行记录里如实注明
 #      "pi 免费模型不可用，已降级为本地执行"。
 #
@@ -25,9 +27,12 @@ PI=/home/hatch/.npm-global/bin/pi
 GW="http://127.0.0.1:3425"
 AR_GW="http://127.0.0.1:3426"
 AR_PROXY="$HOME/workspace/custom-connectors/custom.anyrouter/bin/anyrouter-proxy.py"
+RADOX_GW="http://127.0.0.1:3427"
+RADOX_PROXY="$HOME/workspace/custom-connectors/custom.radox/bin/radox-proxy.py"
 KILO_MODEL="kilo-free-all/kilo-auto/free"
 ZEN_MODEL="zen-free-all/longcat-2.5-preview-free"
 AR_MODEL="anyrouter/free"
+RADOX_MODEL="claude-opus-5.5"
 TIMEOUT="${PI_REASON_TIMEOUT:-150}"
 FALLBACK_LOG="$HOME/workspace/logs/pi-fallback.log"
 
@@ -67,6 +72,18 @@ if ! curl -sf --max-time 5 "$AR_GW/v1/models" >/dev/null 2>&1; then
 fi
 AR_OK=0
 curl -sf --max-time 5 "$AR_GW/v1/models" >/dev/null 2>&1 && AR_OK=1
+# --- 0c. Radox 本地代理检查（不通则尝试拉起；挂了不致命，只记日志） ---
+if ! curl -sf --max-time 5 "$RADOX_GW/v1/models" >/dev/null 2>&1; then
+  if [ -f "$RADOX_PROXY" ]; then
+    nohup python3 "$RADOX_PROXY" >>"$HOME/workspace/logs/radox-proxy.log" 2>&1 &
+    for _ in $(seq 1 10); do
+      sleep 2
+      curl -sf --max-time 3 "$RADOX_GW/v1/models" >/dev/null 2>&1 && break
+    done
+  fi
+fi
+RADOX_OK=0
+curl -sf --max-time 5 "$RADOX_GW/v1/models" >/dev/null 2>&1 && RADOX_OK=1
 
 run_pi() {  # $1 = provider, $2 = model id
   timeout "$TIMEOUT" "$PI" --provider "$1" --model "$2" -p "$PROMPT" </dev/null 2>"/tmp/pi-reason-${TAG}.err"
@@ -86,5 +103,11 @@ if [ "$AR_OK" = 1 ]; then
     printf '%s\n' "$OUT"; exit 0
   fi
 fi
-R="kilo($KILO_MODEL)、zen($ZEN_MODEL)、anyrouter($AR_MODEL) 免费模型均调用失败，stderr 见 /tmp/pi-reason-${TAG}.err"
+if [ "$RADOX_OK" = 1 ]; then
+  OUT="$(run_pi radox "$RADOX_MODEL")"; RC=$?
+  if [ $RC -eq 0 ] && [ -n "$(printf '%s' "$OUT" | tr -d '[:space:]')" ]; then
+    printf '%s\n' "$OUT"; exit 0
+  fi
+fi
+R="kilo($KILO_MODEL)、zen($ZEN_MODEL)、anyrouter($AR_MODEL)、radox($RADOX_MODEL) 免费模型均调用失败，stderr 见 /tmp/pi-reason-${TAG}.err"
 log_fallback "$R"; echo "PI_UNAVAILABLE: $R"; exit 3
